@@ -1,0 +1,9 @@
+# Não apague: este arquivo existe só pra o git carregar a pasta mri/data/.
+#
+# O mri/server.lua grava config.json e presets.json aqui com SaveResourceFile,
+# que NÃO cria diretório intermediário — sem a pasta, todo save falha em
+# silêncio (só um print de erro) e a UI cai nos DEFAULTS do server.lua.
+#
+# Como o config.json é ignorado (estado de runtime), sem este arquivo a pasta
+# ficaria vazia e o git não a levaria no clone: toda instalação nova nasceria
+# quebrada.

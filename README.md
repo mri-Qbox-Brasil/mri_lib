@@ -1,89 +1,106 @@
-# last update: 24.26.2025
+<div align="center">
 
-# ox_lib Redesign by mur4i
-A few changes redesign for overextened context menu, font changes, theme and colors.
-Download the release if you want to use.
+# ox_lib MRI Qbox
 
+Versão do [ox_lib](https://github.com/overextended/ox_lib) usada pela MRI Qbox Brasil, com interface redesenhada, painel de design para o admin e configurações por jogador.
 
-Added new features:
-- Add new Context menu description
-- Add new Background convar (ox.cfg)
-```setr ox:menuBackground false #true forces background on every context menu from ox_lib```
-- Add new Background color option
+[![](https://img.shields.io/github/v/release/mri-Qbox-Brasil/mri_lib?style=for-the-badge&logo=github)](https://github.com/mri-Qbox-Brasil/mri_lib/releases/latest)
+[![](https://img.shields.io/github/downloads/mri-Qbox-Brasil/mri_lib/total?style=for-the-badge&logo=github)](https://github.com/mri-Qbox-Brasil/mri_lib/releases/latest/download/ox_lib.zip)
 
-Example of use:
-```lua
-            lib.registerContext({
-                id = 'test',
-                title = 'title from menu',
-                ---------------------------------- NEW OPTIONS BELOW
-                description = 'description from menu', --new line description on menu
-                background = true, --TOGGLE background for only this menu (you can change default to setr ox:menuBackground true)
-                backgroundColor = '#ffffff', --change the background color
-                [...]
-            }) 
-```
-
-Changes only on: //resource/interface/client/context.lua
-```lua
-        data = {
-            title = data.title,
-            description = data.description, --murai
-            background = data.background or GetConvarInt('ox:menuBackground', 0) == 1, --murai
-            backgroundColor = data.backgroundColor, --murai
-            canClose = data.canClose,
-            menu = data.menu,
-            options = data.options
-        }
-```
-Preview:
-![](/ox_lib-preview.png)
-
-
-## 🎨 Sistema de Temas: Dark Premium & Glassmorph
-
-Todo o design do ox_lib foi atualizado para suportar o novo sistema de temas, sem impactar no FPS (Blur removido do Glassmorph).
-
-### Como definir o tema do servidor
-
-O tema padrão é definido pelo admin, para todos os jogadores, no painel `/uiconfig` (permissão ACE `command.uiconfig`), junto com as demais configurações de design da interface.
-
-Cada jogador pode escolher o próprio tema no comando `/ox_lib` (Padrão do servidor, Dark Premium ou Glassmorph). A escolha fica salva no cliente e vale só para ele. Para desativar a escolha pessoal e usar só o tema do `/uiconfig`:
-
-```cfg
-setr mri_ui_allow_theme_choice "false"
-```
-
----
-
-## Credits to overextended:
-A FiveM library and resource implementing reusable modules, methods, and UI elements.
-
-![](https://img.shields.io/github/downloads/communityox/ox_lib/total?logo=github)
-![](https://img.shields.io/github/downloads/communityox/ox_lib/latest/total?logo=github)
-![](https://img.shields.io/github/contributors/communityox/ox_lib?logo=github)
-![](https://img.shields.io/github/v/release/communityox/ox_lib?logo=github)
-
-For guidelines to contributing to the project, and to see our Contributor License Agreement, see [CONTRIBUTING.md](./CONTRIBUTING.md)
-
-For additional legal notices, refer to [NOTICE.md](./NOTICE.md).
-
-
-## 📚 Documentation
-
-https://coxdocs.dev/ox_lib
+</div>
 
 ## 💾 Download
 
-https://github.com/communityox/ox_lib/releases/latest/download/ox_lib.zip
+https://github.com/mri-Qbox-Brasil/mri_lib/releases/latest/download/ox_lib.zip
 
-## 📦 npm package
+O resource continua se chamando `ox_lib`: é só substituir a pasta e manter o `ensure ox_lib` no `server.cfg`. A API é a mesma do upstream, então qualquer script feito para o ox_lib funciona.
 
-https://www.npmjs.com/package/@communityox/ox_lib
+## ✨ O que a versão MRI adiciona
+
+### Interface redesenhada
+Menus, notificações, barras de progresso, diálogos, radial e skillcheck com o visual da MRI, em dois temas: **Dark Premium** e **Glassmorph** (sem blur, para não pesar no FPS).
+
+### `/uiconfig`: painel de design do admin
+Painel para configurar a interface ingame, para todos os jogadores e sem restart: tema, cor de destaque, cor de fundo, cantos arredondados, opacidade do glass, fonte, cores de status, posição e duração das notificações, estilo e tamanho das barras de progresso e largura dos menus.
+
+- Permissão: ACE `command.uiconfig`.
+- Salva temas completos como **presets** para reaplicar depois.
+- Tem modo **ao vivo**, que mostra notificações e barras reais na tela enquanto você edita.
+- Com o mri_Qadmin rodando, o painel também aparece como plugin dentro dele.
+
+### `/ox_lib`: configurações do jogador
+Cada jogador escolhe, só para ele:
+
+- **Som das notificações**
+- **Idioma**: salvo no KVP `mri_locale`. O `ox_lib` original usa o KVP `locale`, que é o mesmo em todo servidor com ox_lib; por isso um jogador que escolheu English em outro servidor entrava em inglês. A versão MRI ignora essa chave: sem escolha própria, vale o `ox:locale` do servidor.
+- **Tema da interface**: Padrão do servidor, Dark Premium ou Glassmorph. Pode ser desligado com `mri_ui_allow_theme_choice`.
+
+A posição das notificações não aparece aqui porque vem do `/uiconfig`.
+
+### Menu radial
+Abre com **F1** segurando e fecha ao soltar (no ox_lib original é Z, clicando). O jogador pode trocar a tecla nas configurações de atalhos do FiveM.
+
+### Context menu com descrição e fundo
+`lib.registerContext` aceita três campos a mais:
+
+```lua
+lib.registerContext({
+    id = 'exemplo',
+    title = 'Título do menu',
+    description = 'Descrição abaixo do título', -- novo
+    background = true,                          -- novo: fundo neste menu
+    backgroundColor = '#1f2937',                -- novo: cor do fundo
+    options = {
+        { title = 'Opção 1' },
+    },
+})
+```
+
+Para ligar o fundo em todos os context menus: `setr ox:menuBackground 1`.
+
+### Cores da suite MRI
+A cor de destaque e a cor de fundo são compartilhadas com os outros scripts da MRI (mri_Qmultichar, mri_Qspawn, mri_Qadmin, mri_Qloadscreen, mri_Qchat) e podem ser trocadas com o servidor ligado, via convar ou pelo mri_Qadmin.
+
+### Logs no mri_Qadmin
+Com `setr ox:logger "mri_Qadmin"`, os logs de `lib.logger` de todos os scripts vão para o painel de logs do mri_Qadmin.
+
+## ⚙️ Convars
+
+| Convar | Padrão | O que faz |
+|---|---|---|
+| `setr mri:color "#00E699"` | `#00E699` | Cor de destaque da suite MRI (muda ao vivo) |
+| `setr mri:backgroundColor ""` | vazio | Cor de fundo da suite. Vazio = cor do tema |
+| `setr mri_ui_allow_theme_choice "true"` | `true` | `false` tira a escolha de tema do `/ox_lib`; vale só o tema do `/uiconfig` |
+| `setr ox:menuBackground 1` | `0` | Liga o fundo em todos os context menus |
+| `setr ox:logger "mri_Qadmin"` | `datadog` | Envia os logs de `lib.logger` para o mri_Qadmin |
+| `setr ox:locale "pt-br"` | `en` | Idioma padrão do servidor (do ox_lib original) |
+| `setr ox:userLocales 1` | `1` | `0` impede o jogador de escolher o idioma (do ox_lib original) |
+
+## 🧩 Modificações em relação ao ox_lib
+
+As modificações da MRI ficam na pasta [`mri/`](./mri/README.md), que explica cada arquivo. Fora dela, só mudam:
+
+- `fxmanifest.lua`: carrega a pasta `mri/` e usa a versão do sistema de releases da MRI;
+- `imports/logger/server.lua`: provider de log do mri_Qadmin;
+- `web/`: a interface redesenhada.
+
+Todo o resto é idêntico ao [overextended/ox_lib](https://github.com/overextended/ox_lib), que é sincronizado periodicamente.
+
+## ⚖️ Licença e créditos
+
+O ox_lib é desenvolvido pela [Overextended](https://github.com/overextended) e licenciado sob a LGPL-3.0; as modificações da MRI seguem a mesma licença. Veja [LICENSE](./LICENSE) e [NOTICE.md](./NOTICE.md).
+
+Para contribuir com o ox_lib original, veja o [CONTRIBUTING.md](./CONTRIBUTING.md).
+
+## 📚 Documentação do ox_lib
+
+https://overextended.dev/ox_lib
+
+## 📦 Pacote npm
+
+https://www.npmjs.com/package/@overextended/ox_lib
 
 ## 🖥️ Lua Language Server
 
-- Install [Lua Language Server](https://marketplace.visualstudio.com/items?itemName=sumneko.lua) to ease development with annotations, type checking, diagnostics, and more.
-- Install [CfxLua IntelliSense](https://marketplace.visualstudio.com/items?itemName=communityox.cfxlua-vscode-cox) to add natives and cfxlua runtime declarations to LLS.
-- You can load ox_lib into your global development environment by modifying workspace/user settings "Lua.workspace.library" with the resource path.
-  - e.g. "c:/fxserver/resources/ox_lib"
+- Instale o [Lua Language Server](https://luals.github.io/#install) para ter anotações, checagem de tipos e diagnósticos.
+- Baixe o [fivem-lls-addon](https://github.com/overextended/fivem-lls-addon) para ter as declarações de natives e do runtime do FiveM.

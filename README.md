@@ -42,26 +42,17 @@ Preview:
 
 ## 🎨 Sistema de Temas: Dark Premium & Glassmorph
 
-Todo o design do ox_lib foi atualizado para suportar o novo sistema de temas, permitindo que cada jogador escolha sua interface favorita sem impactar no FPS (Blur removido do Glassmorph).
+Todo o design do ox_lib foi atualizado para suportar o novo sistema de temas, sem impactar no FPS (Blur removido do Glassmorph).
 
-### Como usar os Temas no seu Servidor
+### Como definir o tema do servidor
 
-Você pode definir o comportamento dos temas colocando as seguintes **Convars** no seu arquivo `server.cfg`:
+O tema padrão é definido pelo admin, para todos os jogadores, no painel `/uiconfig` (permissão ACE `command.uiconfig`), junto com as demais configurações de design da interface.
+
+Cada jogador pode escolher o próprio tema no comando `/ox_lib` (Padrão do servidor, Dark Premium ou Glassmorph). A escolha fica salva no cliente e vale só para ele. Para desativar a escolha pessoal e usar só o tema do `/uiconfig`:
 
 ```cfg
-# Define o tema padrão (dark ou glass)
-setr mri_ui_default_theme "dark"
-
-# Permite que o jogador escolha o próprio tema (true ou false)
-setr mri_ui_allow_theme_choice "true"
+setr mri_ui_allow_theme_choice "false"
 ```
-
-### Comando In-Game
-Caso a escolha de temas esteja habilitada (`mri_ui_allow_theme_choice "true"`), os jogadores podem abrir o menu de personalização pelo chat com os seguintes comandos:
-- `/uitheme`
-- `/temaui`
-
-O tema selecionado pelo jogador é salvo no cachê local (`GetResourceKvpString`) para que a escolha seja mantida mesmo após relogar.
 
 ---
 

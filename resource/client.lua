@@ -21,26 +21,9 @@ end
 
 RegisterNUICallback('getConfig', function(_, cb)
     cb({
-        -- Cor de destaque da suite MRI (compartilhada com mri_Qmultichar,
-        -- mri_Qspawn, mri_Qadmin, mri_Qloadscreen, mri_Qchat). Definida via
-        -- `setr mri:color "#hex"` no server.cfg ou pelo painel admin do
-        -- mri_Qadmin. NUI converte hex → HSL e seta nos tokens shadcn.
-        accentColor = GetConvar('mri:color', '#00E699'),
-        -- Cor de fundo da suite (`setr mri:backgroundColor`). Vazio = sem cor
-        -- custom; a NUI limpa os tokens e o index.css volta a mandar.
-        backgroundColor = GetConvar('mri:backgroundColor', ''),
+        primaryColor = GetConvar('ox:primaryColor', 'blue'),
+        primaryShade = GetConvarInt('ox:primaryShade', 8)
     })
-end)
-
--- Broadcast: convar `mri:color` mudou no server, propaga pra NUI ja aberta.
--- O hook `useNuiEvent` desestrutura `event.data.data` (mesmo padrao do
--- showContext/progress/etc), entao o payload tem que vir aninhado em `data`.
-RegisterNetEvent('ox_lib:accentColorChanged', function(newColor)
-    SendNUIMessage({ action = 'updateAccentColor', data = { accentColor = newColor } })
-end)
-
-RegisterNetEvent('ox_lib:backgroundColorChanged', function(newColor)
-    SendNUIMessage({ action = 'updateBackgroundColor', data = { backgroundColor = newColor or '' } })
 end)
 
 local function isSpawned() return not NetworkIsInTutorialSession() and true or nil end

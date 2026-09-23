@@ -380,13 +380,13 @@ function lib.showRadialMenu(id)
 end
 
 lib.addKeybind({
-    name = 'mri_ox_lib-radial',
+    name = 'ox_lib-radial',
     description = locale('open_radial_menu'),
-    defaultKey = 'F1',
+    defaultKey = 'z',
     onPressed = function()
         onRadialOpen()
     end,
-    onReleased = lib.hideRadial, --murai
+    -- onReleased = lib.hideRadial,
 })
 
 AddEventHandler('onClientResourceStop', function(resource)

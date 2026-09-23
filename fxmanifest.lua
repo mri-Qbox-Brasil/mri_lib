@@ -6,7 +6,7 @@ rdr3_warning 'I acknowledge that this is a prerelease build of RedM, and I am aw
 
 name 'ox_lib'
 author 'Overextended'
-version '3.39.1'
+version '3.40.0'
 license 'LGPL-3.0-or-later'
 repository 'https://github.com/overextended/ox_lib'
 description 'A library of shared functions to utilise in other resources.'
@@ -26,6 +26,7 @@ files {
     'web/build/index.html',
     'web/build/**/*',
     'locales/*.json',
+    'modules/**/init.lua',
     -- Modificações MRI (pasta mri/ na raiz). data/config.json e a fonte dos
     -- settings de design editaveis pelo painel /uiconfig.
     'mri/data/*.json',
@@ -39,10 +40,14 @@ shared_scripts {
 }
 
 client_scripts {
+    -- MRI: antes do resource/** de proposito (intercepta o keybind do radial).
+    'mri/radial.lua',
     'resource/**/client.lua',
     'resource/**/client/*.lua',
     -- MRI: nao casa com o glob resource/** acima (fica em mri/ na raiz).
+    -- Depois do upstream: envolve/re-exporta funcoes ja definidas.
     'mri/client.lua',
+    'mri/settings.lua',
 }
 
 server_scripts {

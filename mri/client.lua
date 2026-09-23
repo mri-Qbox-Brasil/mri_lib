@@ -129,3 +129,100 @@ RegisterNUICallback('uiConfigPreview', function(data, cb)
     end
     cb({ ok = true })
 end)
+
+-- ============================================================================
+-- Cores da suite MRI (mri:color / mri:backgroundColor). Compartilhadas com
+-- mri_Qmultichar, mri_Qspawn, mri_Qadmin, mri_Qloadscreen, mri_Qchat. A NUI
+-- converte hex -> HSL e seta nos tokens. Callback proprio (e nao o getConfig
+-- do upstream) pra nao precisar alterar resource/client.lua.
+-- ============================================================================
+
+RegisterNUICallback('mri:getConfig', function(_, cb)
+    cb({
+        accentColor = GetConvar('mri:color', '#00E699'),
+        -- Vazio = sem cor custom; a NUI limpa os tokens e o index.css volta a mandar.
+        backgroundColor = GetConvar('mri:backgroundColor', ''),
+    })
+end)
+
+-- Broadcast do server quando a convar muda (ver mri/server.lua). O hook
+-- useNuiEvent desestrutura event.data.data, entao o payload vai aninhado em `data`.
+RegisterNetEvent('ox_lib:accentColorChanged', function(newColor)
+    SendNUIMessage({ action = 'updateAccentColor', data = { accentColor = newColor } })
+end)
+
+RegisterNetEvent('ox_lib:backgroundColorChanged', function(newColor)
+    SendNUIMessage({ action = 'updateBackgroundColor', data = { backgroundColor = newColor or '' } })
+end)
+
+-- ============================================================================
+-- Notificacoes: a posicao padrao vem do /uiconfig (NUI), nao da escolha do
+-- /ox_lib. O upstream so aplica settings.notification_position quando o script
+-- nao passa `position`; tirando o valor da tabela (require cacheado, a mesma do
+-- notify.lua) e barrando que volte, a NUI decide. Position explicito continua valendo.
+-- ============================================================================
+
+local settings = require 'resource.settings'
+settings.notification_position = nil
+
+setmetatable(settings, {
+    __newindex = function(t, key, value)
+        if key == 'notification_position' then return end
+        rawset(t, key, value)
+    end,
+})
+
+-- ============================================================================
+-- Context menu: campos extras da MRI (description, background, backgroundColor).
+-- O showContext do upstream monta o payload com campos fixos, entao guardamos
+-- os extras no registerContext e mandamos numa mensagem propria logo antes do
+-- showContext; a NUI junta as duas. Re-exporta pra valer tambem pros outros
+-- resources (o export registrado por ultimo prevalece).
+-- ============================================================================
+
+local contextExtras = {}
+local registerContext = lib.registerContext
+local showContext = lib.showContext
+
+local function saveContextExtras(menu)
+    contextExtras[menu.id] = {
+        description = menu.description,
+        background = menu.background,
+        backgroundColor = menu.backgroundColor,
+    }
+end
+
+local function mriRegisterContext(context)
+    for k, v in pairs(context) do
+        if type(k) == 'number' then
+            saveContextExtras(v)
+        else
+            saveContextExtras(context)
+            break
+        end
+    end
+
+    return registerContext(context)
+end
+
+local function mriShowContext(id)
+    local extras = contextExtras[id]
+
+    if extras then
+        SendNUIMessage({
+            action = 'mri:contextExtras',
+            data = {
+                description = extras.description,
+                background = extras.background or GetConvarInt('ox:menuBackground', 0) == 1,
+                backgroundColor = extras.backgroundColor,
+            }
+        })
+    end
+
+    return showContext(id)
+end
+
+rawset(lib, 'registerContext', mriRegisterContext)
+rawset(lib, 'showContext', mriShowContext)
+exports('registerContext', mriRegisterContext)
+exports('showContext', mriShowContext)

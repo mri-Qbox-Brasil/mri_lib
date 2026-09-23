@@ -311,3 +311,24 @@ CreateThread(function()
     Wait(0)
     doRegister()
 end)
+
+-- ============================================================================
+-- Broadcast em runtime quando as convars de cor da suite mudam (admin via
+-- painel do mri_Qadmin ou `setr` no console). Mesmo padrao do mri_Qmultichar,
+-- mri_Qspawn, mri_Qadmin e mri_Qchat. O client repassa pra NUI (mri/client.lua).
+-- ============================================================================
+
+AddConvarChangeListener('mri:color', function(name)
+    if name ~= 'mri:color' then return end
+    local color = GetConvar('mri:color', '#00E699')
+    if not color:match('^#%x%x%x%x%x%x$') then return end
+    TriggerClientEvent('ox_lib:accentColorChanged', -1, color)
+end)
+
+-- Diferente do accent, '' e valido: significa "sem cor custom".
+AddConvarChangeListener('mri:backgroundColor', function(name)
+    if name ~= 'mri:backgroundColor' then return end
+    local color = GetConvar('mri:backgroundColor', '')
+    if color ~= '' and not color:match('^#%x%x%x%x%x%x$') then return end
+    TriggerClientEvent('ox_lib:backgroundColorChanged', -1, color)
+end)

@@ -1,23 +1,3 @@
--- Broadcast em runtime quando a convar `mri:color` muda (admin via painel
--- mri_Qadmin ou `setr mri:color` no console). Mesmo padrao do
--- mri_Qmultichar/mri_Qspawn/mri_Qadmin/mri_Qchat — toda a suite MRI
--- compartilha a mesma cor de destaque.
-AddConvarChangeListener('mri:color', function(name)
-    if name ~= 'mri:color' then return end
-    local color = GetConvar('mri:color', '#00E699')
-    if not color:match('^#%x%x%x%x%x%x$') then return end
-    TriggerClientEvent('ox_lib:accentColorChanged', -1, color)
-end)
-
--- Idem pra cor de fundo. Diferente do accent, '' e valido: significa "sem cor
--- custom", os tokens do index.css voltam a valer.
-AddConvarChangeListener('mri:backgroundColor', function(name)
-    if name ~= 'mri:backgroundColor' then return end
-    local color = GetConvar('mri:backgroundColor', '')
-    if color ~= '' and not color:match('^#%x%x%x%x%x%x$') then return end
-    TriggerClientEvent('ox_lib:backgroundColorChanged', -1, color)
-end)
-
 local locales, localesN = lib.getFilesInDirectory('locales', '%.json')
 
 for i = 1, localesN do

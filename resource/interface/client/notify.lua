@@ -34,6 +34,7 @@ function lib.notify(data)
     local sound = settings.notification_audio and data.sound
     local payload = table.clone(data)
     payload.sound = nil
+    payload.position = payload.position or settings.notification_position
 
     SendNUIMessage({
         action = 'notify',

@@ -20,7 +20,7 @@ local DEFAULTS = {
     glassOpacity = 0.65,
     notifyPosition = 'top-right',
     notifyDuration = 5000,
-    fontFamily = 'Inter',
+    fontFamily = 'Saira',
     successColor = '#10b981',
     warningColor = '#eab308',
     errorColor = '#ef4444',
@@ -116,6 +116,36 @@ end
 
 loadFromDisk()
 
+-- Sem o Qadmin, o proprio ox_lib e o dono das cores da suite: a cor salva no
+-- painel vira a convar (`mri:color` / `mri:backgroundColor`), que e o que os
+-- outros resources leem, e e reaplicada no start por cima do server.cfg.
+-- Limpar a cor no painel devolve o valor do server.cfg, capturado aqui antes
+-- de qualquer escrita.
+local SUITE_COLORS = {
+    accentColor = { convar = 'mri:color', original = GetConvar('mri:color', '#00E699') },
+    backgroundColor = { convar = 'mri:backgroundColor', original = GetConvar('mri:backgroundColor', '') },
+}
+
+---@param key 'accentColor' | 'backgroundColor'
+---@param previous? string cor salva antes do commit (nil no start)
+local function syncSuiteColor(key, previous)
+    local suite = SUITE_COLORS[key]
+    local color = config[key]
+
+    if color == '' then
+        -- Nada salvo: so mexe na convar se antes havia cor do painel.
+        if not previous or previous == '' then return end
+        color = suite.original
+    end
+
+    if GetConvar(suite.convar, '') ~= color then
+        SetConvarReplicated(suite.convar, color)
+    end
+end
+
+syncSuiteColor('accentColor')
+syncSuiteColor('backgroundColor')
+
 -- Getter Lua pra outros scripts/comandos (broadcast usa pra mandar a versao
 -- corrente sem reler do disco).
 function GetUiConfig()
@@ -128,8 +158,8 @@ end
 -- override e viram edicao do global — write-through pro Qadmin, e o config.json
 -- fica com '' porque o valor nao mora aqui.
 --
--- Sem o Qadmin nao ha onde persistir a convar, entao os campos voltam a ser
--- override local (comportamento antigo, valendo so pra UI do ox_lib).
+-- Sem o Qadmin, a cor fica no config.json e o ox_lib aplica ela na convar
+-- (syncSuiteColor), entao vale pra suite inteira do mesmo jeito.
 local function suiteColorsManaged()
     return GetResourceState('mri_Qadmin') == 'started'
 end
@@ -161,8 +191,14 @@ local function commitConfig(incoming)
         incoming.backgroundColor = ''
     end
 
+    local previous = config
     config = incoming
     if not saveToDisk() then return false end
+
+    if not suiteColorsManaged() then
+        syncSuiteColor('accentColor', previous.accentColor)
+        syncSuiteColor('backgroundColor', previous.backgroundColor)
+    end
 
     -- Broadcast pra todos reaplicarem sem restart. As cores nao vem por aqui no
     -- modo managed — chegam pelo broadcast da convar, disparado pelo Qadmin.

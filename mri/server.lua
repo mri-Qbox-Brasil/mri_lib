@@ -13,11 +13,11 @@ local PRESETS_FILE = 'mri/data/presets.json'
 -- Defaults: fallback se o JSON sumir/corromper OU se faltar chave (forward
 -- compat). Devem bater com mri/data/config.json.
 local DEFAULTS = {
-    theme = 'dark',
+    theme = 'glass',
     accentColor = '',
     backgroundColor = '',
     radius = 8,
-    opacity = 1,
+    opacity = 0.8,
     notifyPosition = 'top-right',
     notifyDuration = 5000,
     fontFamily = 'Saira',
@@ -77,8 +77,9 @@ local VALIDATORS = {
 }
 
 local function applyDefaults(input)
-    if input.opacity == nil and input.theme == 'glass' and type(input.glassOpacity) == 'number' then
-        input.opacity = math.max(0.3, math.min(1, input.glassOpacity))
+    if input.opacity == nil and input.theme ~= nil then
+        input.opacity = input.theme == 'glass' and type(input.glassOpacity) == 'number'
+            and math.max(0.3, math.min(1, input.glassOpacity)) or 1
     end
 
     local out = {}

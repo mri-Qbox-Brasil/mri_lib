@@ -18,7 +18,7 @@ O resource continua se chamando `ox_lib`: é só substituir a pasta e manter o `
 ## ✨ O que a versão MRI adiciona
 
 ### Interface redesenhada
-Menus, notificações, barras de progresso, diálogos, radial e skillcheck com o visual da MRI, em dois temas: **Dark Premium** e **Glassmorph** (sem blur, para não pesar no FPS).
+Menus, notificações, barras de progresso, diálogos, radial e skillcheck com o visual da MRI, em dois temas: **Glassmorph** (padrão, opacidade 0.8) e **Dark Premium**. Sem blur, para não pesar no FPS.
 
 ### `/adminui` (ou `/uiconfig`): painel de design do admin
 Painel para configurar a interface ingame, para todos os jogadores e sem restart: tema, cor de destaque, cor de fundo, cantos arredondados, opacidade dos painéis (vale para qualquer tema), fonte, cores de status, posição e duração das notificações, estilo e tamanho das barras de progresso e largura dos menus.

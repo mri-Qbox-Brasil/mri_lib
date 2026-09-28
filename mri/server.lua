@@ -17,7 +17,7 @@ local DEFAULTS = {
     accentColor = '',
     backgroundColor = '',
     radius = 8,
-    glassOpacity = 0.65,
+    opacity = 1,
     notifyPosition = 'top-right',
     notifyDuration = 5000,
     fontFamily = 'Saira',
@@ -56,7 +56,7 @@ local VALIDATORS = {
         return type(v) == 'string' and (v == '' or v:match('^#%x%x%x%x%x%x$') ~= nil)
     end,
     radius = function(v) return type(v) == 'number' and v >= 0 and v <= 32 end,
-    glassOpacity = function(v) return type(v) == 'number' and v >= 0 and v <= 1 end,
+    opacity = function(v) return type(v) == 'number' and v >= 0.3 and v <= 1 end,
     notifyPosition = function(v) return NOTIFY_POSITIONS[v] == true end,
     notifyDuration = function(v) return type(v) == 'number' and v >= 500 and v <= 30000 end,
     fontFamily = function(v)
@@ -77,6 +77,10 @@ local VALIDATORS = {
 }
 
 local function applyDefaults(input)
+    if input.opacity == nil and input.theme == 'glass' and type(input.glassOpacity) == 'number' then
+        input.opacity = math.max(0.3, math.min(1, input.glassOpacity))
+    end
+
     local out = {}
     for k, v in pairs(DEFAULTS) do
         local incoming = input[k]

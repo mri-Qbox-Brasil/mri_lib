@@ -21,7 +21,7 @@ O resource continua se chamando `ox_lib`: é só substituir a pasta e manter o `
 Menus, notificações, barras de progresso, diálogos, radial e skillcheck com o visual da MRI, em dois temas: **Dark Premium** e **Glassmorph** (sem blur, para não pesar no FPS).
 
 ### `/adminui` (ou `/uiconfig`): painel de design do admin
-Painel para configurar a interface ingame, para todos os jogadores e sem restart: tema, cor de destaque, cor de fundo, cantos arredondados, opacidade do glass, fonte, cores de status, posição e duração das notificações, estilo e tamanho das barras de progresso e largura dos menus.
+Painel para configurar a interface ingame, para todos os jogadores e sem restart: tema, cor de destaque, cor de fundo, cantos arredondados, opacidade dos painéis (vale para qualquer tema), fonte, cores de status, posição e duração das notificações, estilo e tamanho das barras de progresso e largura dos menus.
 
 - Permissão: ACE `ox_lib.uiconfig`, que pode ser dada a um grupo pelo editor de permissões do mri_Qadmin. `command.uiconfig` continua valendo para quem já tinha no `server.cfg`.
 - Salva temas completos como **presets** para reaplicar depois.

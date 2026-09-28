@@ -107,14 +107,23 @@ local function saveToDisk()
     return ok
 end
 
--- Gate de admin: usa o sistema de ACE do proprio ox_lib. `command.uiconfig`
--- ou `command` (god/console) liberam. Mesma semantica OR da suite.
+-- Gate de admin, mesmo padrao da suite (<resource>.admin OR command).
+-- `ox_lib.uiconfig` e concedivel pelo editor de grupos do mri_Qadmin;
+-- `command.uiconfig` fica por compatibilidade com server.cfg antigo.
 local function isAdmin(source)
-    return IsPlayerAceAllowed(source, 'command.uiconfig')
+    return IsPlayerAceAllowed(source, 'ox_lib.uiconfig')
+        or IsPlayerAceAllowed(source, 'command.uiconfig')
         or IsPlayerAceAllowed(source, 'command')
 end
 
 loadFromDisk()
+
+lib.addCommand({ 'adminui', 'uiconfig' }, {
+    help = 'Abre o painel de design da UI (admin)',
+}, function(source)
+    if source <= 0 or not isAdmin(source) then return end
+    TriggerClientEvent('ox_lib:openUiConfig', source)
+end)
 
 -- Sem o Qadmin, o proprio ox_lib e o dono das cores da suite: a cor salva no
 -- painel vira a convar (`mri:color` / `mri:backgroundColor`), que e o que os
@@ -171,7 +180,7 @@ end)
 -- Caminho unico de commit: write-through das cores (se managed), grava e
 -- broadcasta. Usado pelo save do painel E pelo applyPreset — um preset carrega
 -- cores tambem, e sem passar por aqui ele reintroduziria override pelas costas.
-local function commitConfig(incoming)
+local function commitConfig(incoming, writeEmptyBackground)
     if suiteColorsManaged() then
         -- Repassa pro Qadmin e zera local. O `pcall` cobre versao do Qadmin sem
         -- os exports; se falhar, o campo fica '' e a convar manda — degradado,
@@ -180,7 +189,7 @@ local function commitConfig(incoming)
             if incoming.accentColor ~= '' then
                 exports['mri_Qadmin']:SetSuiteAccent(incoming.accentColor)
             end
-            if incoming.backgroundColor ~= '' then
+            if incoming.backgroundColor ~= '' or writeEmptyBackground then
                 exports['mri_Qadmin']:SetSuiteBackground(incoming.backgroundColor)
             end
         end)
@@ -206,12 +215,22 @@ local function commitConfig(incoming)
     return true
 end
 
+---Copia do config com as cores reais da suite no modo managed, pro painel.
+local function panelConfig()
+    if not suiteColorsManaged() then return config end
+    local out = {}
+    for k, v in pairs(config) do out[k] = v end
+    out.accentColor = GetConvar('mri:color', '#00E699')
+    out.backgroundColor = GetConvar('mri:backgroundColor', '')
+    return out
+end
+
 lib.callback.register('ox_lib:saveUiConfig', function(source, payload)
     if not isAdmin(source) then return false, 'sem permissão' end
     if type(payload) ~= 'table' then return false, 'payload inválido' end
 
-    if not commitConfig(applyDefaults(payload)) then return false, 'falha ao salvar' end
-    return true, config
+    if not commitConfig(applyDefaults(payload), true) then return false, 'falha ao salvar' end
+    return true, panelConfig()
 end)
 
 -- Limpa um override de cor, voltando pra convar global da suite (`mri:color`
@@ -221,7 +240,7 @@ end)
 -- source de player, entao nao passa pelo gate de ACE. Quem chama e o
 -- mri_Qadmin quando o admin aplica uma cor global pelo painel de Settings dele
 -- — ali o gate ja rodou (`qadmin.page.settings`), que e outra perm, e exigir
--- `command.uiconfig` por cima faria o picker do Qadmin falhar em silencio.
+-- `ox_lib.uiconfig` por cima faria o picker do Qadmin falhar em silencio.
 --
 -- Idempotente: se ja esta vazio nao reescreve o disco nem broadcasta. Isso e o
 -- que impede disparo circular — o broadcast so sai quando algo mudou de fato.
@@ -299,7 +318,7 @@ lib.callback.register('ox_lib:applyPreset', function(source, name)
             if not commitConfig(applyDefaults(type(p.config) == 'table' and p.config or {})) then
                 return false, 'falha ao salvar'
             end
-            return true, config
+            return true, panelConfig()
         end
     end
     return false, 'preset não encontrado'
@@ -326,7 +345,7 @@ local function doRegister()
         icon = 'palette',
         resource = GetCurrentResourceName(),
         htmlPath = 'web/build/index.html',
-        requiredPerms = { 'command.uiconfig', 'command' },
+        requiredPerms = { 'ox_lib.uiconfig', 'command' },
         description = 'Editar estilos de design do ox_lib (tema, cores, etc)',
     })
 end

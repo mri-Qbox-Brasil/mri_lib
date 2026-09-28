@@ -2,8 +2,8 @@
     Modificação MRI Qbox sobre o ox_lib (LGPL-3.0).
 
     Lado client do painel de design da UI. Hidrata o config no boot e manda
-    pra NUI aplicar; expõe o comando /uiconfig (gateado por ACE) pra abrir o
-    painel standalone; trata os callbacks NUI do painel admin; e reaplica
+    pra NUI aplicar; abre o painel standalone quando o server manda (comandos
+    /adminui e /uiconfig); trata os callbacks NUI do painel admin; e reaplica
     quando o server faz broadcast de mudança.
 ]]
 
@@ -27,6 +27,10 @@ local function withMeta(cfg)
     local out = {}
     for k, v in pairs(cfg) do out[k] = v end
     out.suiteColorsManaged = GetResourceState('mri_Qadmin') == 'started'
+    if out.suiteColorsManaged then
+        out.accentColor = GetConvar('mri:color', '#00E699')
+        out.backgroundColor = GetConvar('mri:backgroundColor', '')
+    end
     return out
 end
 
@@ -49,13 +53,10 @@ RegisterNetEvent('ox_lib:uiConfigChanged', function(newConfig)
     SendNUIMessage({ action = 'applyUiConfig', data = newConfig })
 end)
 
--- Comando standalone pra abrir o painel. Restrito por ACE: RegisterCommand
--- nativo com restricted = true exige o ace command.uiconfig no jogador. De
--- toda forma o save e gateado de novo no server (saveUiConfig).
-RegisterCommand('uiconfig', function()
+RegisterNetEvent('ox_lib:openUiConfig', function()
     SetNuiFocus(true, true)
     SendNUIMessage({ action = 'openUiConfig', data = withMeta(getConfig()) })
-end, true)
+end)
 
 -- Painel pede o config (boot do painel, standalone ou embedded no Qadmin).
 RegisterNUICallback('adminGetUiConfig', function(_, cb)
@@ -65,7 +66,6 @@ end)
 -- Painel salva. Repassa pro server (que gateia ACE + persiste + broadcasta).
 RegisterNUICallback('adminSaveUiConfig', function(payload, cb)
     local ok, result = lib.callback.await('ox_lib:saveUiConfig', false, payload)
-    if ok and result then uiConfig = result end
     cb({ success = ok == true, config = ok and result or nil })
 end)
 
@@ -90,7 +90,6 @@ end)
 
 RegisterNUICallback('adminApplyPreset', function(data, cb)
     local ok, result = lib.callback.await('ox_lib:applyPreset', false, data and data.name)
-    if ok and result then uiConfig = result end
     cb({ success = ok == true, config = ok and result or nil })
 end)
 

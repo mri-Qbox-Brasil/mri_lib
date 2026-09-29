@@ -16,6 +16,8 @@ local function getConfig()
     return uiConfig
 end
 
+exports('getUiConfig', getConfig)
+
 -- Flag de leitura pro painel: com o mri_Qadmin presente, ele e o dono das cores
 -- da suite (banco + convar), entao os campos de cor do painel editam o GLOBAL
 -- (write-through) em vez de override local. Ver saveUiConfig no server.

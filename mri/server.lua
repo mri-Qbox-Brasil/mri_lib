@@ -25,6 +25,7 @@ local DEFAULTS = {
     warningColor = '#eab308',
     errorColor = '#ef4444',
     progressStyle = 'default',
+    progressTheme = 'hud',
     switchStyle = 'follow',
     notifyWidth = 320,
     progressBarWidth = 380,
@@ -69,6 +70,9 @@ local VALIDATORS = {
     -- Shape dos toggles on/off; 'follow' deriva do radius (default).
     switchStyle = function(v) return v == 'square' or v == 'round' or v == 'follow' end,
     progressStyle = function(v) return v == 'default' or v == 'bar' or v == 'circle' end,
+    progressTheme = function(v)
+        return v == 'hud' or v == 'tactical' or v == 'minimal' or v == 'segmented' or v == 'capsule'
+    end,
     notifyWidth = function(v) return type(v) == 'number' and v >= 240 and v <= 480 end,
     progressBarWidth = function(v) return type(v) == 'number' and v >= 240 and v <= 600 end,
     progressBarHeight = function(v) return type(v) == 'number' and v >= 10 and v <= 32 end,

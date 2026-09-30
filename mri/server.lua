@@ -32,6 +32,7 @@ local DEFAULTS = {
     progressCircleSize = 110,
     menuWidth = 400,
     contextWidth = 360,
+    radialMode = 'hold',
 }
 
 local config = {}
@@ -74,6 +75,7 @@ local VALIDATORS = {
     progressCircleSize = function(v) return type(v) == 'number' and v >= 80 and v <= 160 end,
     menuWidth = function(v) return type(v) == 'number' and v >= 300 and v <= 560 end,
     contextWidth = function(v) return type(v) == 'number' and v >= 280 and v <= 520 end,
+    radialMode = function(v) return v == 'hold' or v == 'toggle' end,
 }
 
 local function applyDefaults(input)

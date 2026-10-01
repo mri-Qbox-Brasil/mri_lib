@@ -33,7 +33,7 @@ local DEFAULTS = {
     progressCircleSize = 110,
     menuWidth = 400,
     contextWidth = 360,
-    radialMode = 'hold',
+    radialMode = 'toggle',
 }
 
 local config = {}

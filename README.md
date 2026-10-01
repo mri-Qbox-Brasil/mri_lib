@@ -38,7 +38,7 @@ Cada jogador escolhe, só para ele:
 A posição das notificações não aparece aqui porque vem do `/uiconfig`.
 
 ### Menu radial
-Abre com **F1** (no ox_lib original é Z). O modo é escolhido no `/adminui`, aba Menus: **segurar a tecla** (padrão, fecha ao soltar) ou **apertar pra abrir e fechar**, como no ox_lib original. O jogador pode trocar a tecla nas configurações de atalhos do FiveM.
+Abre com **F1** (no ox_lib original é Z). O modo é escolhido no `/adminui`, aba Menus: **apertar pra abrir e fechar** (padrão, como no ox_lib original) ou **segurar a tecla** (fecha ao soltar). **ESC** (ou botão direito) volta uma página/submenu e, na raiz, fecha. O jogador pode trocar a tecla nas configurações de atalhos do FiveM.
 
 ### Context menu com descrição e fundo
 `lib.registerContext` aceita três campos a mais:

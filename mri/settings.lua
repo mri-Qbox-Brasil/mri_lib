@@ -72,7 +72,7 @@ end
 local function getThemeChoice()
     if not allowThemeChoice() then return end
     local theme = GetResourceKvpString(THEME_KVP)
-    if theme == 'dark' or theme == 'glass' then return theme end
+    if theme == 'dark' or theme == 'glass' or theme == 'liquid' then return theme end
 end
 
 -- A NUI pede no mount (nao depende de timing de push no boot).
@@ -129,6 +129,7 @@ local options = {
                     { label = 'Padrão do servidor', value = 'server' },
                     { label = 'Dark Premium', value = 'dark' },
                     { label = 'Glassmorph', value = 'glass' },
+                    { label = 'Vidro líquido', value = 'liquid' },
                 },
                 default = getThemeChoice() or 'server',
                 required = true,
@@ -136,7 +137,7 @@ local options = {
             }
         end,
         apply = function(value)
-            if value == 'dark' or value == 'glass' then
+            if value == 'dark' or value == 'glass' or value == 'liquid' then
                 SetResourceKvp(THEME_KVP, value)
             else
                 DeleteResourceKvp(THEME_KVP)

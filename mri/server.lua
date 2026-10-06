@@ -34,6 +34,8 @@ local DEFAULTS = {
     menuWidth = 400,
     contextWidth = 360,
     radialMode = 'toggle',
+    radialTheme = 'ring',
+    radialSize = 166,
 }
 
 local config = {}
@@ -48,7 +50,7 @@ local NOTIFY_POSITIONS = {
 -- default — o JSON persistido e o broadcast nunca carregam lixo, mesmo que
 -- o payload venha adulterado (fontFamily entra em CSS var na NUI).
 local VALIDATORS = {
-    theme = function(v) return v == 'dark' or v == 'glass' end,
+    theme = function(v) return v == 'dark' or v == 'glass' or v == 'liquid' end,
     accentColor = function(v)
         return type(v) == 'string' and (v == '' or v:match('^#%x%x%x%x%x%x$') ~= nil)
     end,
@@ -80,6 +82,8 @@ local VALIDATORS = {
     menuWidth = function(v) return type(v) == 'number' and v >= 300 and v <= 560 end,
     contextWidth = function(v) return type(v) == 'number' and v >= 280 and v <= 520 end,
     radialMode = function(v) return v == 'hold' or v == 'toggle' end,
+    radialTheme = function(v) return v == 'ring' or v == 'orbs' or v == 'cards' or v == 'minimal' end,
+    radialSize = function(v) return type(v) == 'number' and v >= 120 and v <= 240 end,
 }
 
 local function applyDefaults(input)

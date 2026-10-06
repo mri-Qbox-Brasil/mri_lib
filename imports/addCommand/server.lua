@@ -30,6 +30,14 @@ AddEventHandler('playerJoining', function()
     TriggerClientEvent('chat:addSuggestions', source, registeredCommands)
 end)
 
+-- MRI: with the mri_Qbox passport module set for commands, the number is the character passport
+---@param id number?
+---@return number?
+local function resolvePlayerId(id)
+    if not id or not GlobalState['mri:passportCommands'] then return id end
+    return exports.mri_Qbox:GetPlayerByPassport(id)
+end
+
 ---@param source number
 ---@param args table
 ---@param raw string
@@ -48,7 +56,7 @@ local function parseArguments(source, args, raw, params)
         elseif param.type == 'string' then
             value = not tonumber(arg) and arg
         elseif param.type == 'playerId' then
-            value = arg == 'me' and source or tonumber(arg)
+            value = arg == 'me' and source or resolvePlayerId(tonumber(arg))
 
             if not value or not DoesPlayerExist(value--[[@as string]]) then
                 value = false

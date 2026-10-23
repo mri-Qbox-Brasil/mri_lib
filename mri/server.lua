@@ -1,24 +1,16 @@
---[[
-    Modificação MRI Qbox sobre o ox_lib (LGPL-3.0).
-
-    Gerencia os settings de DESIGN da UI (tema, accent, radius, etc) editáveis
-    ingame pelo painel admin. data/config.json e a fonte de verdade; este
-    script le/escreve + faz broadcast pra todos os clients reaplicarem sem
-    restart, e registra o painel como plugin do mri_Qadmin.
-]]
+-- MRI: UI design settings edited in game (/uiconfig and the mri_Qadmin plugin), see mri/README.md.
 
 local CONFIG_FILE = 'mri/data/config.json'
 local PRESETS_FILE = 'mri/data/presets.json'
 
--- Defaults: fallback se o JSON sumir/corromper OU se faltar chave (forward
--- compat). Devem bater com mri/data/config.json.
+-- Fallback for a missing or broken file and for keys added later.
 local DEFAULTS = {
     theme = 'glass',
     accentColor = '',
     backgroundColor = '',
     radius = 8,
     opacity = 0.8,
-    notifyPosition = 'top-right',
+    notifyPosition = 'center-left',
     notifyDuration = 5000,
     fontFamily = 'Saira',
     successColor = '#10b981',
@@ -26,6 +18,7 @@ local DEFAULTS = {
     errorColor = '#ef4444',
     progressStyle = 'default',
     progressTheme = 'hud',
+    circleTheme = 'follow',
     switchStyle = 'follow',
     notifyWidth = 320,
     progressBarWidth = 380,
@@ -36,6 +29,32 @@ local DEFAULTS = {
     radialMode = 'toggle',
     radialTheme = 'ring',
     radialSize = 166,
+    notifyLayout = 'card',
+    textUiLayout = 'box',
+    contextLayout = 'cards',
+    menuLayout = 'cards',
+    dialogLayout = 'center',
+    textUiPosition = 'script',
+    textUiOffset = 16,
+    textUiScale = 100,
+    textUiKeyStyle = 'theme',
+    textUiCase = 'normal',
+    textUiIcon = 'show',
+    menuPosition = 'script',
+    menuOffset = 5,
+    menuScale = 100,
+    menuIcons = 'show',
+    menuCounter = 'show',
+    menuTitleCase = 'normal',
+    contextPosition = 'right',
+    contextScale = 100,
+    contextIcons = 'show',
+    contextDescriptions = 'show',
+    radialPageSize = 6,
+    radialLabels = 'show',
+    radialBackdrop = 'none',
+    dialogSize = 'script',
+    dialogBackdrop = 'none',
 }
 
 local config = {}
@@ -46,16 +65,21 @@ local NOTIFY_POSITIONS = {
     ['bottom-left'] = true, ['bottom-center'] = true, ['bottom-right'] = true,
 }
 
--- Valor invalido (tipo errado, fora do range, fora da whitelist) cai no
--- default — o JSON persistido e o broadcast nunca carregam lixo, mesmo que
--- o payload venha adulterado (fontFamily entra em CSS var na NUI).
+-- Same lists as web/src/lib/layoutConfig.ts and progressConfig.ts.
+local function oneOf(...)
+    local set = {}
+    for _, v in ipairs({ ... }) do set[v] = true end
+    return function(v) return set[v] == true end
+end
+
+-- Invalid values fall back to the default, so a tampered payload never reaches disk or the NUI CSS.
 local VALIDATORS = {
     theme = function(v) return v == 'dark' or v == 'glass' or v == 'liquid' end,
+    -- '' means "follow the suite convar" (mri:color).
     accentColor = function(v)
         return type(v) == 'string' and (v == '' or v:match('^#%x%x%x%x%x%x$') ~= nil)
     end,
-    -- Mesma regra do accent: '' e valido e significa "seguir a convar global"
-    -- (aqui, mri:backgroundColor).
+    -- '' means "follow the suite convar" (mri:backgroundColor).
     backgroundColor = function(v)
         return type(v) == 'string' and (v == '' or v:match('^#%x%x%x%x%x%x$') ~= nil)
     end,
@@ -69,12 +93,36 @@ local VALIDATORS = {
     successColor = function(v) return type(v) == 'string' and v:match('^#%x%x%x%x%x%x$') ~= nil end,
     warningColor = function(v) return type(v) == 'string' and v:match('^#%x%x%x%x%x%x$') ~= nil end,
     errorColor = function(v) return type(v) == 'string' and v:match('^#%x%x%x%x%x%x$') ~= nil end,
-    -- Shape dos toggles on/off; 'follow' deriva do radius (default).
     switchStyle = function(v) return v == 'square' or v == 'round' or v == 'follow' end,
     progressStyle = function(v) return v == 'default' or v == 'bar' or v == 'circle' end,
-    progressTheme = function(v)
-        return v == 'hud' or v == 'tactical' or v == 'minimal' or v == 'segmented' or v == 'capsule'
-    end,
+    progressTheme = oneOf('hud', 'tactical', 'minimal', 'segmented', 'capsule', 'split', 'slim'),
+    circleTheme = oneOf('follow', 'hud', 'tactical', 'minimal', 'segmented', 'capsule', 'arc', 'pie', 'dual'),
+    notifyLayout = oneOf('card', 'island', 'line', 'compact', 'block'),
+    textUiLayout = oneOf('box', 'key', 'pill', 'arrow', 'minimal'),
+    contextLayout = oneOf('cards', 'list', 'compact', 'grid', 'sidebar', 'numbered', 'outline'),
+    menuLayout = oneOf('cards', 'list', 'compact', 'pills', 'classic', 'outline', 'minimal'),
+    dialogLayout = oneOf('center', 'bottom', 'side'),
+    textUiPosition = oneOf('script', 'right-center', 'left-center', 'top-center', 'bottom-center'),
+    textUiOffset = function(v) return type(v) == 'number' and v >= 0 and v <= 160 end,
+    textUiScale = function(v) return type(v) == 'number' and v >= 80 and v <= 150 end,
+    textUiKeyStyle = oneOf('theme', 'accent', 'white', 'dark', 'outline'),
+    textUiCase = oneOf('normal', 'upper'),
+    textUiIcon = oneOf('show', 'hide'),
+    menuPosition = oneOf('script', 'top-left', 'top-right', 'bottom-left', 'bottom-right'),
+    menuOffset = function(v) return type(v) == 'number' and v >= 0 and v <= 120 end,
+    menuScale = function(v) return type(v) == 'number' and v >= 80 and v <= 130 end,
+    menuIcons = oneOf('show', 'hide'),
+    menuCounter = oneOf('show', 'hide'),
+    menuTitleCase = oneOf('normal', 'upper'),
+    contextPosition = oneOf('right', 'left', 'center'),
+    contextScale = function(v) return type(v) == 'number' and v >= 80 and v <= 130 end,
+    contextIcons = oneOf('show', 'hide'),
+    contextDescriptions = oneOf('show', 'hide'),
+    radialPageSize = function(v) return type(v) == 'number' and v >= 4 and v <= 10 and v % 1 == 0 end,
+    radialLabels = oneOf('show', 'center'),
+    radialBackdrop = oneOf('none', 'dim'),
+    dialogSize = oneOf('script', 'sm', 'md', 'lg', 'xl'),
+    dialogBackdrop = oneOf('none', 'dim'),
     notifyWidth = function(v) return type(v) == 'number' and v >= 240 and v <= 480 end,
     progressBarWidth = function(v) return type(v) == 'number' and v >= 240 and v <= 600 end,
     progressBarHeight = function(v) return type(v) == 'number' and v >= 10 and v <= 32 end,
@@ -82,11 +130,12 @@ local VALIDATORS = {
     menuWidth = function(v) return type(v) == 'number' and v >= 300 and v <= 560 end,
     contextWidth = function(v) return type(v) == 'number' and v >= 280 and v <= 520 end,
     radialMode = function(v) return v == 'hold' or v == 'toggle' end,
-    radialTheme = function(v) return v == 'ring' or v == 'orbs' or v == 'cards' or v == 'minimal' end,
+    radialTheme = oneOf('ring', 'orbs', 'cards', 'minimal', 'petals', 'arc', 'dial', 'chips'),
     radialSize = function(v) return type(v) == 'number' and v >= 120 and v <= 240 end,
 }
 
 local function applyDefaults(input)
+    -- Configs saved before `opacity` keep their look: glass reuses glassOpacity, dark stays opaque.
     if input.opacity == nil and input.theme ~= nil then
         input.opacity = input.theme == 'glass' and type(input.glassOpacity) == 'number'
             and math.max(0.3, math.min(1, input.glassOpacity)) or 1
@@ -122,9 +171,7 @@ local function saveToDisk()
     return ok
 end
 
--- Gate de admin, mesmo padrao da suite (<resource>.admin OR command).
--- `ox_lib.uiconfig` e concedivel pelo editor de grupos do mri_Qadmin;
--- `command.uiconfig` fica por compatibilidade com server.cfg antigo.
+-- `ox_lib.uiconfig` is grantable in the mri_Qadmin group editor; `command.uiconfig` is legacy server.cfg.
 local function isAdmin(source)
     return IsPlayerAceAllowed(source, 'ox_lib.uiconfig')
         or IsPlayerAceAllowed(source, 'command.uiconfig')
@@ -134,30 +181,26 @@ end
 loadFromDisk()
 
 lib.addCommand({ 'adminui', 'uiconfig' }, {
-    help = 'Abre o painel de design da UI (admin)',
+    help = 'Abre o painel de design da interface (admin)',
 }, function(source)
     if source <= 0 or not isAdmin(source) then return end
     TriggerClientEvent('ox_lib:openUiConfig', source)
 end)
 
--- Sem o Qadmin, o proprio ox_lib e o dono das cores da suite: a cor salva no
--- painel vira a convar (`mri:color` / `mri:backgroundColor`), que e o que os
--- outros resources leem, e e reaplicada no start por cima do server.cfg.
--- Limpar a cor no painel devolve o valor do server.cfg, capturado aqui antes
--- de qualquer escrita.
+-- Without mri_Qadmin the panel color becomes the suite convar; clearing it restores the server.cfg value read here.
 local SUITE_COLORS = {
     accentColor = { convar = 'mri:color', original = GetConvar('mri:color', '#00E699') },
     backgroundColor = { convar = 'mri:backgroundColor', original = GetConvar('mri:backgroundColor', '') },
 }
 
 ---@param key 'accentColor' | 'backgroundColor'
----@param previous? string cor salva antes do commit (nil no start)
+---@param previous? string color saved before the commit (nil on start)
 local function syncSuiteColor(key, previous)
     local suite = SUITE_COLORS[key]
     local color = config[key]
 
     if color == '' then
-        -- Nada salvo: so mexe na convar se antes havia cor do painel.
+        -- Only touch the convar when a panel color was there before.
         if not previous or previous == '' then return end
         color = suite.original
     end
@@ -170,20 +213,11 @@ end
 syncSuiteColor('accentColor')
 syncSuiteColor('backgroundColor')
 
--- Getter Lua pra outros scripts/comandos (broadcast usa pra mandar a versao
--- corrente sem reler do disco).
 function GetUiConfig()
     return config
 end
 
--- Com o mri_Qadmin presente ele e o dono das cores da suite: guarda no banco e
--- replica via convar (`mri:color` / `mri:backgroundColor`), que e o que os
--- outros resources leem. Nesse modo os campos de cor DESTE painel deixam de ser
--- override e viram edicao do global — write-through pro Qadmin, e o config.json
--- fica com '' porque o valor nao mora aqui.
---
--- Sem o Qadmin, a cor fica no config.json e o ox_lib aplica ela na convar
--- (syncSuiteColor), entao vale pra suite inteira do mesmo jeito.
+-- With mri_Qadmin running it owns the suite colors (database + convar); the panel color fields write through to it.
 local function suiteColorsManaged()
     return GetResourceState('mri_Qadmin') == 'started'
 end
@@ -192,14 +226,10 @@ lib.callback.register('ox_lib:getUiConfig', function()
     return config
 end)
 
--- Caminho unico de commit: write-through das cores (se managed), grava e
--- broadcasta. Usado pelo save do painel E pelo applyPreset — um preset carrega
--- cores tambem, e sem passar por aqui ele reintroduziria override pelas costas.
+-- Single commit path for the panel save and applyPreset, so a preset's colors also go to mri_Qadmin.
 local function commitConfig(incoming, writeEmptyBackground)
     if suiteColorsManaged() then
-        -- Repassa pro Qadmin e zera local. O `pcall` cobre versao do Qadmin sem
-        -- os exports; se falhar, o campo fica '' e a convar manda — degradado,
-        -- mas nunca com duas cores concorrentes.
+        -- pcall covers a mri_Qadmin without these exports; the convar keeps ruling, never two colors.
         local ok = pcall(function()
             if incoming.accentColor ~= '' then
                 exports['mri_Qadmin']:SetSuiteAccent(incoming.accentColor)
@@ -217,20 +247,22 @@ local function commitConfig(incoming, writeEmptyBackground)
 
     local previous = config
     config = incoming
-    if not saveToDisk() then return false end
+    if not saveToDisk() then
+        config = previous
+        return false
+    end
 
     if not suiteColorsManaged() then
         syncSuiteColor('accentColor', previous.accentColor)
         syncSuiteColor('backgroundColor', previous.backgroundColor)
     end
 
-    -- Broadcast pra todos reaplicarem sem restart. As cores nao vem por aqui no
-    -- modo managed — chegam pelo broadcast da convar, disparado pelo Qadmin.
+    -- In managed mode the colors arrive through the convar broadcast fired by mri_Qadmin.
     TriggerClientEvent('ox_lib:uiConfigChanged', -1, config)
     return true
 end
 
----Copia do config com as cores reais da suite no modo managed, pro painel.
+---Config for the panel, with the real suite colors in managed mode.
 local function panelConfig()
     if not suiteColorsManaged() then return config end
     local out = {}
@@ -248,34 +280,24 @@ lib.callback.register('ox_lib:saveUiConfig', function(source, payload)
     return true, panelConfig()
 end)
 
--- Limpa um override de cor, voltando pra convar global da suite (`mri:color`
--- ou `mri:backgroundColor`).
---
--- Export (nao RegisterNetEvent) de proposito: e uma chamada server->server, sem
--- source de player, entao nao passa pelo gate de ACE. Quem chama e o
--- mri_Qadmin quando o admin aplica uma cor global pelo painel de Settings dele
--- — ali o gate ja rodou (`qadmin.page.settings`), que e outra perm, e exigir
--- `ox_lib.uiconfig` por cima faria o picker do Qadmin falhar em silencio.
---
--- Idempotente: se ja esta vazio nao reescreve o disco nem broadcasta. Isso e o
--- que impede disparo circular — o broadcast so sai quando algo mudou de fato.
+-- Idempotent on purpose: no write or broadcast when already empty, which stops circular triggers.
 local function clearColorOverride(key)
     if config[key] == '' then return true end
+    local previous = config[key]
     config[key] = ''
-    if not saveToDisk() then return false end
+    if not saveToDisk() then
+        config[key] = previous
+        return false
+    end
     TriggerClientEvent('ox_lib:uiConfigChanged', -1, config)
     return true
 end
 
+-- Server-side exports for mri_Qadmin, which already gated its own settings page permission.
 exports('ClearAccentOverride', function() return clearColorOverride('accentColor') end)
 exports('ClearBackgroundOverride', function() return clearColorOverride('backgroundColor') end)
 
--- ============================================================================
--- Presets: temas nomeados salvos em mri/data/presets.json. O config.json
--- continua sendo o ativo/aplicado; aplicar um preset copia ele pro ativo e
--- broadcasta. Cada preset guarda um config completo (passa por applyDefaults
--- na leitura/escrita, entao nunca carrega chave invalida ou faltante).
--- ============================================================================
+-- Presets: named themes in mri/data/presets.json; applying one copies it into the active config.
 
 local function loadPresets()
     local raw = LoadResourceFile(GetCurrentResourceName(), PRESETS_FILE)
@@ -297,7 +319,6 @@ local function validName(name)
     return type(name) == 'string' and #name >= 1 and #name <= 40 and name:match('^[%w][%w%s%-_]*$') ~= nil
 end
 
--- Lista os nomes dos presets (pro dropdown do painel).
 lib.callback.register('ox_lib:listPresets', function(source)
     if not isAdmin(source) then return {} end
     local names = {}
@@ -307,7 +328,6 @@ lib.callback.register('ox_lib:listPresets', function(source)
     return names
 end)
 
--- Salva/atualiza (upsert) um preset com o config recebido (o draft do painel).
 lib.callback.register('ox_lib:savePreset', function(source, data)
     if not isAdmin(source) then return false, 'sem permissão' end
     if type(data) ~= 'table' or not validName(data.name) then return false, 'nome inválido' end
@@ -323,13 +343,10 @@ lib.callback.register('ox_lib:savePreset', function(source, data)
     return true
 end)
 
--- Aplica um preset: vira o config ativo, persiste e broadcasta pra todos.
 lib.callback.register('ox_lib:applyPreset', function(source, name)
     if not isAdmin(source) then return false, 'sem permissão' end
     for _, p in ipairs(loadPresets()) do
         if p.name == name then
-            -- Via commitConfig: um preset carrega cores, e no modo managed elas
-            -- precisam ir pro banco do Qadmin em vez de virar override local.
             if not commitConfig(applyDefaults(type(p.config) == 'table' and p.config or {})) then
                 return false, 'falha ao salvar'
             end
@@ -343,17 +360,23 @@ lib.callback.register('ox_lib:deletePreset', function(source, name)
     if not isAdmin(source) then return false, 'sem permissão' end
     local presets = loadPresets()
     for i, p in ipairs(presets) do
-        if p.name == name then table.remove(presets, i); break end
+        if p.name == name then
+            table.remove(presets, i)
+            if not savePresets(presets) then return false, 'falha ao salvar' end
+            return true
+        end
     end
-    if not savePresets(presets) then return false, 'falha ao salvar' end
     return true
 end)
 
--- Registra o painel como plugin do mri_Qadmin (se presente). Fail-silent —
--- ox_lib funciona normalmente sem o Qadmin; o /uiconfig standalone cobre.
--- Manifest shape espelha web/src/plugin/types.ts (drift control manual).
+-- Manifest shape mirrors web/src/plugin/types.ts.
 local function doRegister()
     if GetResourceState('mri_Qadmin') ~= 'started' then return end
+
+    -- Colors saved here before mri_Qadmin was installed would override its suite colors forever.
+    clearColorOverride('accentColor')
+    clearColorOverride('backgroundColor')
+
     exports['mri_Qadmin']:RegisterPlugin({
         id = 'uiconfig',
         label = 'Interface (UI)',
@@ -365,29 +388,19 @@ local function doRegister()
     })
 end
 
--- Sinal oficial do Qadmin: emitido sempre que o registry dele fica pronto.
--- Complementa o onServerResourceStart abaixo, que depende do timing do start; este
--- dispara quando o registry esta de fato aceitando plugins. RegisterPlugin e
--- idempotente por `id`, entao os dois caminhos juntos sao seguros.
+-- RegisterPlugin is idempotent by id, so the three paths below can overlap.
 AddEventHandler('mri_Qadmin:server:pluginsReady', doRegister)
 
--- Qadmin inicia/reinicia → re-registra automaticamente
 AddEventHandler('onServerResourceStart', function(resourceName)
     if resourceName == 'mri_Qadmin' then doRegister() end
 end)
 
--- Plugin inicia com Qadmin já rodando → registra imediatamente
 CreateThread(function()
     Wait(0)
     doRegister()
 end)
 
--- ============================================================================
--- Broadcast em runtime quando as convars de cor da suite mudam (admin via
--- painel do mri_Qadmin ou `setr` no console). Mesmo padrao do mri_Qmultichar,
--- mri_Qspawn, mri_Qadmin e mri_Qchat. O client repassa pra NUI (mri/client.lua).
--- ============================================================================
-
+-- Suite color convars changed at runtime (mri_Qadmin or `setr`); mri/client.lua forwards to the NUI.
 AddConvarChangeListener('mri:color', function(name)
     if name ~= 'mri:color' then return end
     local color = GetConvar('mri:color', '#00E699')
@@ -395,7 +408,7 @@ AddConvarChangeListener('mri:color', function(name)
     TriggerClientEvent('ox_lib:accentColorChanged', -1, color)
 end)
 
--- Diferente do accent, '' e valido: significa "sem cor custom".
+-- Unlike the accent, '' is valid here: no custom background.
 AddConvarChangeListener('mri:backgroundColor', function(name)
     if name ~= 'mri:backgroundColor' then return end
     local color = GetConvar('mri:backgroundColor', '')

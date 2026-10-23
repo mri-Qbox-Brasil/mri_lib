@@ -1,23 +1,9 @@
---[[
-    /ox_lib da MRI: configuracoes pessoais do jogador.
-
-    Substitui o comando registrado pelo resource/settings.lua do upstream (este
-    arquivo carrega depois, no mesmo resource). Usa a MESMA tabela de settings
-    (require cacheado), entao notify/locale do upstream continuam lendo daqui.
-
-    Diferencas do upstream: sem a posicao das notificacoes, que na MRI vem do
-    /uiconfig (ver mri/client.lua), e com o tema pessoal da interface. Pra
-    adicionar uma opcao por jogador, e so incluir uma entrada em `options`.
-]]
+-- MRI: replaces the upstream /ox_lib command (same cached settings table), without notify position and with the personal theme.
 
 local settings = require 'resource.settings'
 local userLocales = GetConvarInt('ox:userLocales', 1) == 1
 
--- Idioma da MRI. O KVP de client e isolado so pelo nome do resource, nao pelo
--- servidor: o `locale` do upstream e o mesmo em todo servidor com ox_lib, entao
--- quem escolheu English em outro servidor chegava aqui em ingles. A MRI nunca le
--- nem grava esse KVP compartilhado; usa uma chave propria (compartilhada so entre
--- servidores MRI). Sem escolha nela, vale o `ox:locale` do servidor.
+-- Own KVP: the upstream `locale` one is shared by every ox_lib server the player joins.
 local LOCALE_KVP = 'mri_locale'
 
 local function getSavedLocale()
@@ -25,8 +11,7 @@ local function getSavedLocale()
     if value and value ~= '' then return value end
 end
 
--- O upstream ja carregou o idioma do KVP compartilhado (resource/locale/client.lua);
--- corrige aqui, no load do ox_lib, antes dos outros resources pedirem o idioma.
+-- Upstream already loaded the shared KVP; fix it here before other resources ask for the locale.
 if userLocales then
     local wanted = getSavedLocale() or settings.default_locale
 
@@ -36,7 +21,7 @@ if userLocales then
     end
 end
 
--- Mesma persistencia do `set` do upstream (local la, por isso repetida aqui).
+-- Same persistence as the upstream `set`, which is local there.
 local function set(key, value)
     if settings[key] == value then return false end
 
@@ -60,29 +45,27 @@ local function set(key, value)
     return true
 end
 
--- Tema pessoal: por cima do tema do /uiconfig, so pra este jogador. O admin
--- desliga com `setr mri_ui_allow_theme_choice "false"` (vale so o /uiconfig).
+-- Personal theme over the /uiconfig one; `setr mri_ui_allow_theme_choice "false"` turns it off.
 local THEME_KVP = 'mri_ui_theme'
 
 local function allowThemeChoice()
     return GetConvar('mri_ui_allow_theme_choice', 'true') ~= 'false'
 end
 
----@return 'dark' | 'glass' | nil
+---@return 'dark' | 'glass' | 'liquid' | nil
 local function getThemeChoice()
     if not allowThemeChoice() then return end
     local theme = GetResourceKvpString(THEME_KVP)
     if theme == 'dark' or theme == 'glass' or theme == 'liquid' then return theme end
 end
 
--- A NUI pede no mount (nao depende de timing de push no boot).
 RegisterNUICallback('mri:getThemeChoice', function(_, cb)
     cb({ theme = getThemeChoice() })
 end)
 
 ---@class MriSettingOption
 ---@field enabled? fun(): boolean
----@field input fun(): table campo do lib.inputDialog
+---@field input fun(): table lib.inputDialog field
 ---@field apply fun(value: any)
 
 ---@type MriSettingOption[]
@@ -124,12 +107,12 @@ local options = {
         input = function()
             return {
                 type = 'select',
-                label = 'Tema da interface',
+                label = locale('ui.settings.theme'),
                 options = {
-                    { label = 'Padrão do servidor', value = 'server' },
-                    { label = 'Dark Premium', value = 'dark' },
-                    { label = 'Glassmorph', value = 'glass' },
-                    { label = 'Vidro líquido', value = 'liquid' },
+                    { label = locale('ui.settings.theme_server'), value = 'server' },
+                    { label = locale('ui.settings.theme_dark'), value = 'dark' },
+                    { label = locale('ui.settings.theme_glass'), value = 'glass' },
+                    { label = locale('ui.settings.theme_liquid'), value = 'liquid' },
                 },
                 default = getThemeChoice() or 'server',
                 required = true,

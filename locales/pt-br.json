@@ -9,7 +9,19 @@
       "locale": "Alterar idioma",
       "locale_description": "Idioma atual: ${language} (%s)",
       "notification_audio": "Áudio de notificação",
-      "notification_position": "Posição da notificação"
+      "notification_position": "Posição da notificação",
+      "theme": "Tema da interface",
+      "theme_server": "Padrão do servidor",
+      "theme_dark": "Dark Premium",
+      "theme_glass": "Glassmorph",
+      "theme_liquid": "Vidro líquido"
+    },
+    "notify": {
+      "success": "Sucesso",
+      "error": "Erro",
+      "warning": "Atenção",
+      "inform": "Aviso",
+      "now": "agora"
     },
     "position": {
       "bottom": "Inferior",

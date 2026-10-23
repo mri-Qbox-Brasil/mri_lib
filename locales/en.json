@@ -10,7 +10,19 @@
       "locale": "Change locale",
       "locale_description": "Current language: ${language} (%s)",
       "notification_audio": "Notification audio",
-      "notification_position": "Notification position"
+      "notification_position": "Notification position",
+      "theme": "Interface theme",
+      "theme_server": "Server default",
+      "theme_dark": "Dark Premium",
+      "theme_glass": "Glassmorph",
+      "theme_liquid": "Liquid glass"
+    },
+    "notify": {
+      "success": "Success",
+      "error": "Error",
+      "warning": "Warning",
+      "inform": "Info",
+      "now": "now"
     },
     "position": {
       "bottom": "Bottom",

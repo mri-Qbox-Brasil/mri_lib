@@ -1,16 +1,8 @@
---[[
-    Carregado ANTES de resource/** (ver fxmanifest): o radial do ox_lib registra
-    o keybind no load do arquivo, entao interceptamos o lib.addKeybind pra trocar
-    so o do radial. Qualquer outro keybind passa direto.
-
-    MRI: tecla F1. O modo vem do /adminui (radialMode): 'toggle' (padrao) aperta pra abrir
-    e de novo pra fechar, como o ox_lib original; 'hold' segura pra abrir e
-    solta pra fechar. O nome muda pra que o bind antigo do jogador (Z) nao seja
-    reaproveitado.
-]]
+-- MRI: loads before resource/** to swap the radial keybind (F1, new name so the old Z bind is not reused).
 
 local addKeybind = lib.addKeybind
 
+-- 'hold' closes on release; 'toggle' (default) keeps the upstream press to open and close.
 local function holdToOpen()
     local ok, cfg = pcall(function() return exports[GetCurrentResourceName()]:getUiConfig() end)
     return ok and type(cfg) == 'table' and cfg.radialMode == 'hold'
@@ -28,6 +20,7 @@ rawset(lib, 'addKeybind', function(data)
     return addKeybind(data)
 end)
 
+-- ESC acts on key release; block the pause menu until that frame passes or GTA opens it on the same press.
 RegisterNUICallback('mriRadialEscape', function(_, cb)
     cb(1)
 

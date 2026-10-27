@@ -55,6 +55,23 @@ local DEFAULTS = {
     radialBackdrop = 'none',
     dialogSize = 'script',
     dialogBackdrop = 'none',
+    itemNotifyLayout = 'slot',
+    inventoryScale = 100,
+    inventoryColumns = 5,
+    inventorySlotStyle = 'card',
+    inventoryLabels = 'always',
+    inventoryWeight = 'ring',
+    inventoryDurability = 'show',
+    inventoryFilters = 'show',
+    inventoryHints = 'show',
+    inventoryHotbar = 'center',
+    inventoryBackdrop = 'full',
+    inventoryBackdropColor = 'theme',
+    inventoryBackdropOpacity = 'theme',
+    inventorySlotOpacity = 'theme',
+    itemNotifyPosition = 'bottom-center',
+    itemNotifyOffset = 15,
+    itemNotifyScale = 100,
 }
 
 local config = {}
@@ -123,6 +140,24 @@ local VALIDATORS = {
     radialBackdrop = oneOf('none', 'dim'),
     dialogSize = oneOf('script', 'sm', 'md', 'lg', 'xl'),
     dialogBackdrop = oneOf('none', 'dim'),
+    itemNotifyLayout = oneOf('slot', 'card', 'pill', 'icon', 'line'),
+    itemNotifyPosition = function(v) return NOTIFY_POSITIONS[v] == true end,
+    itemNotifyOffset = function(v) return type(v) == 'number' and v >= 0 and v <= 40 end,
+    itemNotifyScale = function(v) return type(v) == 'number' and v >= 70 and v <= 150 end,
+    -- ox_inventory look; same lists as web/src/lib/inventoryConfig.ts.
+    inventoryScale = function(v) return v == 90 or v == 100 or v == 110 or v == 125 end,
+    inventoryColumns = function(v) return type(v) == 'number' and v >= 5 and v <= 7 and v % 1 == 0 end,
+    inventorySlotStyle = oneOf('card', 'outline', 'clean'),
+    inventoryLabels = oneOf('always', 'hover', 'hidden'),
+    inventoryWeight = oneOf('ring', 'bar', 'text'),
+    inventoryDurability = oneOf('show', 'hide'),
+    inventoryFilters = oneOf('show', 'hide'),
+    inventoryHints = oneOf('show', 'hide'),
+    inventoryHotbar = oneOf('center', 'left', 'right'),
+    inventoryBackdrop = oneOf('full', 'vignette', 'bottom', 'none'),
+    inventoryBackdropColor = oneOf('theme', 'black', 'accent'),
+    inventoryBackdropOpacity = oneOf('theme', 100, 80, 60, 40, 20),
+    inventorySlotOpacity = oneOf('theme', 100, 80, 60, 40, 20),
     notifyWidth = function(v) return type(v) == 'number' and v >= 240 and v <= 480 end,
     progressBarWidth = function(v) return type(v) == 'number' and v >= 240 and v <= 600 end,
     progressBarHeight = function(v) return type(v) == 'number' and v >= 10 and v <= 32 end,
@@ -179,6 +214,13 @@ local function isAdmin(source)
 end
 
 loadFromDisk()
+
+-- ox_inventory hands its item notifications to us while this key is set (cleared on stop).
+GlobalState['mri:itemNotify'] = true
+
+AddEventHandler('onResourceStop', function(resourceName)
+    if resourceName == GetCurrentResourceName() then GlobalState['mri:itemNotify'] = nil end
+end)
 
 lib.addCommand({ 'adminui', 'uiconfig' }, {
     help = 'Abre o painel de design da interface (admin)',

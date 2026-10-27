@@ -69,6 +69,11 @@ RegisterNUICallback('adminDeletePreset', function(data, cb)
     cb({ success = ok == true })
 end)
 
+-- ox_inventory item notification ({ key, label, action, image, count, tone }), only while GlobalState['mri:itemNotify'] is set.
+exports('itemNotify', function(data)
+    SendNUIMessage({ action = 'itemNotify', data = data })
+end)
+
 -- Live mode: real components via SendNUIMessage, only the ones that never take focus.
 RegisterNUICallback('uiConfigPreview', function(data, cb)
     local kind = data and data.kind
@@ -79,6 +84,15 @@ RegisterNUICallback('uiConfigPreview', function(data, cb)
             type = data.notifyType or 'success',
             duration = data.duration or 4000,
             position = data.position,
+        } })
+    elseif kind == 'itemNotify' then
+        SendNUIMessage({ action = 'itemNotify', data = {
+            key = 'preview',
+            label = 'Água',
+            action = 'Adicionado',
+            image = 'nui://ox_inventory/web/images/water.png',
+            count = 1,
+            tone = 'gain',
         } })
     elseif kind == 'progressBar' then
         -- preview=true skips the progressStyle routing, so the editor always shows the bar.
